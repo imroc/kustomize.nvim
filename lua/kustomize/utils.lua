@@ -133,4 +133,48 @@ M.is_executable_available = function(command)
   return vim.fn.executable(command) == 1
 end
 
+---create_temp_file creates a temporary file name
+---@param extension string|nil
+---@return string
+M.create_temp_file_string = function(extension)
+  local t = os.tmpname()
+  -- could create an empty file http://www.lua.org/manual/5.1/manual.html#pdf-os.tmpname
+  os.remove(t)
+  if extension == nil then
+    return t
+  end
+  return t .. "." .. extension
+end
+
+---delete_file deletes a file
+---@param file string
+M.delete_file = function(file)
+  local ok, message
+  -- can create an empty file http://www.lua.org/manual/5.1/manual.html#pdf-os.tmpname
+  ok, message = os.remove(file)
+  if not ok then
+    assert(type(message) == "string")
+    M.error("could not delete file: " .. message)
+  end
+end
+
+---create_file_from_current_buffer_content creates a file with the current buffer's content
+---@param file_name string
+M.create_file_from_current_buffer_content = function(file_name)
+  local bufferData = vim.api.nvim_buf_get_text(0, 0, 0, -1, -1, {})
+  local f, message = io.open(file_name, "w+b")
+  if f ~= nil then
+    local data = table.concat(bufferData, "\n")
+    f:write(data)
+    f:flush()
+    if not f:close() then
+      M.warn("temporary file handler could not be closed")
+    end
+  else
+    assert(type(message) == "string")
+    M.error("could not open file: " .. message)
+    return
+  end
+end
+
 return M

@@ -28,30 +28,18 @@ Jump to the [use cases](#use-cases) to check out what this plugin can do!
 - [kubent](https://github.com/doitintl/kube-no-trouble) in your PATH to [check for deprecations](#check-for-deprecations)
 - [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)
 - [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) and `yaml` parser
+- (optionally) [LuaSnip](https://github.com/L3MON4D3/LuaSnip) snippets (default is disabled)
 
 ## Quickstart
 
-With Packer
-
-```lua
-  use({
-    "allaman/kustomize.nvim",
-    requires = "nvim-lua/plenary.nvim",
-    ft = "yaml",
-    config = function()
-      require('kustomize').setup()
-    end,
-  })
-```
-
-With Lazy
+With [Lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
   "allaman/kustomize.nvim",
   requires = "nvim-lua/plenary.nvim",
   ft = "yaml",
-  config = true,
+  opts = {}
 }
 ```
 
@@ -59,14 +47,14 @@ Run `:checkhealth kustomize` for a health check.
 
 ## Default mappings
 
-| Mode | Mapping      | Action                 | Lua                                          | Command                    |
-| ---- | ------------ | ---------------------- | -------------------------------------------- | -------------------------- |
-| n    | \<leader\>kb | Kustomize build        | `lua require("kustomize").build()`           | `:KustomizeBuild`          |
-| n    | \<leader\>kk | List kinds             | `lua require("kustomize").kinds()`           | `:KustomizeListKinds`      |
-| n    | \<leader\>kr | Print resources        | `lua require("kustomize").print_resources()` | `:KustomizePrintResources` |
-| n    | \<leader\>ko | List 'resources'       | `lua require("kustomize").list_resources()`  | `:KustomizeListResources`  |
-| n    | \<leader\>kv | Validate file          | `lua require("kustomize").validate()`        | `:KustomizeValidate`       |
-| n    | \<leader\>kd | Check API deprecations | `lua require("kustomize").deprecations()`    | `:KustomizeDeprecations`   |
+| Mode | Mapping      | Action                | Lua                                          | Command                    |
+| ---- | ------------ | --------------------- | -------------------------------------------- | -------------------------- |
+| n    | \<leader\>kb | Kustomize build       | `lua require("kustomize").build()`           | `:KustomizeBuild`          |
+| n    | \<leader\>kk | List kinds            | `lua require("kustomize").kinds()`           | `:KustomizeListKinds`      |
+| n    | \<leader\>kr | Print resources       | `lua require("kustomize").print_resources()` | `:KustomizePrintResources` |
+| n    | \<leader\>ko | List 'resources'      | `lua require("kustomize").list_resources()`  | `:KustomizeListResources`  |
+| n    | \<leader\>kv | Validate file         | `lua require("kustomize").validate()`        | `:KustomizeValidate`       |
+| n    | \<leader\>kd | Check API deprecation | `lua require("kustomize").deprecations()`    | `:KustomizeDeprecations`   |
 
 You can define your own keybindings/override the default mappings, for instance:
 
@@ -96,9 +84,10 @@ This is the default configuration that can be (partially) overwritten by you.
 ```lua
 {
     enable_key_mappings = true,
+	enable_lua_snip = false,
     validate = { kubeconform_args = { "--strict", "--ignore-missing-schemas" } }
     deprecations = { kube_version = "1.25" },
-    kinds = { show_filepath = true, show_line = true },
+    kinds = { show_filepath = true, show_line = true, exclude_pattern = {} },
 }
 ```
 
@@ -108,7 +97,20 @@ With Lazy.nvim for instance:
   opts = { validate = { kubeconform_args = { "--strict" } } },
 ```
 
+And some command / Lua APIs support arguments. See [List "kinds"](#list-kinds) and [Check for deprecations](#check-for-deprecations).
+
 ## Use cases
+
+### Snippets
+
+If enabled, kustomize.nvim includes some useful snippets for LuaSnip. All snippets start with `kust`.
+
+<details>
+<summary>Showcase</summary
+
+[![kustomize.nvim-snippets.gif](https://s9.gifyu.com/images/SFBIC.gif)](https://gifyu.com/image/SFBIC)
+
+</details>
 
 ### Build manifests
 
@@ -142,7 +144,19 @@ kinds = {
 -- setting those to false removes "clutter" but you cannot "jump" to a resource anymore
 show_filepath = false,
 show_line = false,
+-- filter resources you are not interested in
+exclude_pattern = {"Namespace", "Ingress"}
 },
+```
+
+You can also dynamically overwrite the values of your config file with
+
+```
+:lua require("kustomize").kinds({show_line=true, show_filepath=true, exclude_pattern={"Namespace", "Ingress"}})
+```
+
+```
+:KustomizeListKinds show_line=true, show_filepath=true, exclude_pattern={"Namespace", "Ingress"}
 ```
 
 ### Open file/directory
@@ -200,3 +214,13 @@ When writing a new deployment I usually split the resources into files according
 </details>
 
 [kubent](https://github.com/doitintl/kube-no-trouble) is a tool to search for deprecated Kubernetes APIs. This plugin utilizes the plugin to check the manifests in the current buffer for deprecated Kubernetes APIs. The buffer's content may be a file on disk or content not (yet) saved, e.g. the output of [Build manifests](#build-manifests). The Kubernetes target version can be set with `deprecations = { kube_version = "1.25" }`.
+
+You can also dynamically overwrite the values of your config file with
+
+```
+:lua require("kustomize").deprecations({kube_version=1.25})
+```
+
+```
+:KustomizeDeprecations kube_version=1.16
+```
